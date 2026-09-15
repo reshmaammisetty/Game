@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NEON SURVIVOR - 2D Cyberpunk Arena Roguelite</title>
+  <meta name="description" content="A fast-paced 2D futuristic neon roguelite arena shooter. Survive endless waves, collect XP, upgrade your spaceship, and destroy elite dreadnoughts." />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Google Fonts for futuristic neon typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="gameWrapper">
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Scanline & CRT vignette effect overlay for authentic neon arcade feel -->
+    <div id="crtOverlay"></div>
+
+    <!-- IN-GAME HUD -->
+    <div id="hud" class="screen-overlay hidden">
+      <!-- Top Left: Health, Shield, Level -->
+      <div class="hud-panel hud-top-left">
+        <div class="hud-row level-badge-row">
+          <div id="levelBadge" class="neon-pill">LVL <span id="hudLevelNum">1</span></div>
+          <div id="killBadge" class="neon-pill kills-pill">💀 <span id="hudKills">0</span></div>
+        </div>
+        
+        <!-- Health Bar -->
+        <div class="stat-bar-container health-bar-container">
+          <div class="stat-bar-label">
+            <span>HULL</span>
+            <span id="hudHpText">100 / 100</span>
+          </div>
+          <div class="stat-bar-track">
+            <div id="hudHpFill" class="stat-bar-fill health-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Shield Bar -->
+        <div id="hudShieldContainer" class="stat-bar-container shield-bar-container">
+          <div class="stat-bar-label">
+            <span>SHIELD</span>
+            <span id="hudShieldText">0 / 0</span>
+          </div>
+          <div class="stat-bar-track">
+            <div id="hudShieldFill" class="stat-bar-fill shield-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Center: Timer, Score, Boss Bar -->
+      <div class="hud-panel hud-top-center">
+        <div class="hud-timer" id="hudTimer">00:00</div>
+        <div class="hud-score-box">
+          <span class="score-label">SCORE</span>
+          <span id="hudScore" class="score-value">000000</span>
+        </div>
+        <div id="hudCombo" class="hud-combo hidden">COMBO x<span id="hudComboVal">1</span></div>
+        
+        <!-- Boss Alert & Boss Bar -->
+        <div id="bossAlertBox" class="boss-alert-box hidden">
+          <div class="boss-warning-text">⚠️ WARNING: DREADNOUGHT DETECTED ⚠️</div>
+          <div class="boss-health-track">
+            <div id="bossHealthFill" class="boss-health-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Right: Audio, Pause, Active Perks -->
+      <div class="hud-panel hud-top-right">
+        <div class="hud-buttons">
+          <button id="btnAudioHud" class="hud-btn" title="Toggle Sound (M)" aria-label="Toggle Audio">
+            <span id="audioIcon">🔊</span>
+          </button>
+          <button id="btnPauseHud" class="hud-btn" title="Pause Game (ESC / P)" aria-label="Pause Game">
+            <span>⏸️</span>
+          </button>
+        </div>
+        <div id="activePerksSummary" class="active-perks-container" title="Active Upgrades">
+          <!-- Populated dynamically with tiny upgrade icons -->
+        </div>
+      </div>
+
+      <!-- Bottom: XP Bar -->
+      <div class="hud-bottom-xp">
+        <div class="xp-bar-track">
+          <div id="hudXpFill" class="xp-bar-fill" style="width: 0%;"></div>
+          <div class="xp-bar-text">
+            <span>EXP PROGRESS</span>
+            <span id="hudXpText">0 / 100</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE TOUCH CONTROLS OVERLAY -->
+    <div id="mobileControls" class="mobile-controls-container hidden">
+      <div id="joystickZone" class="joystick-zone">
+        <div id="joystickBase" class="joystick-base">
+          <div id="joystickThumb" class="joystick-thumb"></div>
+        </div>
+      </div>
+      <div id="touchFireZone" class="touch-fire-zone">
+        <div id="btnMobileAutoFire" class="touch-action-btn">AUTO FIRE: ON</div>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: MAIN MENU -->
+    <div id="mainMenu" class="screen-overlay active">
+      <div class="menu-content cyber-panel">
+        <div class="logo-wrapper">
+          <div class="logo-glitch" data-text="NEON SURVIVOR">NEON SURVIVOR</div>
+          <div class="logo-subtitle">ROGUELITE ARENA PROTOCOL</div>
+        </div>
+
+        <div class="high-score-display">
+          <span class="hs-label">CYBER RECORD</span>
+          <span id="menuHighScore" class="hs-value">000000</span>
+          <span class="hs-sub">BEST TIME: <span id="menuBestTime">00:00</span></span>
+        </div>
+
+        <div class="menu-buttons">
+          <button id="btnPlay" class="cyber-button btn-primary">
+            <span class="btn-glitch"></span>
+            <span class="btn-text">INITIALIZE RUN</span>
+          </button>
+          <button id="btnHowToPlay" class="cyber-button btn-secondary">
+            <span class="btn-text">PILOT MANUAL</span>
+          </button>
+          <button id="btnAudioMenu" class="cyber-button btn-secondary">
+            <span class="btn-text" id="menuAudioText">SOUND: ON</span>
+          </button>
+        </div>
+
+        <div class="quick-controls-hint">
+          <span>[W,A,S,D] / [ARROWS] Move</span> • <span>[MOUSE] Aim</span> • <span>[LEFT CLICK / SPACE] Fire</span> • <span>[P / ESC] Pause</span>
+        </div>
+        <div class="version-tag">SYSTEM v1.0 • 60 FPS OPTIMIZED ENGINE</div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: PILOT MANUAL (HOW TO PLAY MODAL) -->
+    <div id="howToPlayModal" class="modal-backdrop hidden">
+      <div class="modal-card cyber-panel">
+        <div class="modal-header">
+          <h2>PILOT MANUAL & DATABASE</h2>
+          <button id="btnCloseManual" class="close-btn" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body manual-content">
+          <div class="manual-section">
+            <h3>MISSION OBJECTIVE</h3>
+            <p>Pilot your experimental neon fighter deep in hostile cyber space. Neutralize swarms of rogue drones, collect quantum XP cores to level up, and upgrade your battle systems to withstand dreadnought boss attacks!</p>
+          </div>
+
+          <div class="manual-section">
+            <h3>CONTROLS</h3>
+            <div class="controls-grid">
+              <div class="control-item"><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> <span>Thrusters & Movement</span></div>
+              <div class="control-item"><kbd>MOUSE</kbd> <span>Aim Targeting Reticle</span></div>
+              <div class="control-item"><kbd>LEFT CLICK</kbd> / <kbd>SPACE</kbd> <span>Fire Cannons</span></div>
+              <div class="control-item"><kbd>P</kbd> / <kbd>ESC</kbd> <span>Pause Tactical Stream</span></div>
+              <div class="control-item"><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <span>Select Level Up Upgrade</span></div>
+              <div class="control-item"><kbd>TOUCH</kbd> <span>Virtual joystick on mobile devices</span></div>
+            </div>
+          </div>
+
+          <div class="manual-section">
+            <h3>HOSTILE SPECS</h3>
+            <div class="enemy-legend">
+              <div class="legend-row">
+                <span class="legend-icon drone-icon">▲</span>
+                <div><strong>Drone (Red):</strong> Fast, swarms in packs, relentless pursuit.</div>
+              </div>
+              <div class="legend-row">
+                <span class="legend-icon dasher-icon">⚡</span>
+                <div><strong>Dasher (Yellow):</strong> Stalks at distance, then executes a high-velocity dash.</div>
+              </div>
+              <div class="legend-row">
+                <span class="legend-icon tank-icon">⬢</span>
+                <div><strong>Brute (Violet):</strong> Heavily shielded tank. Splits into mini-drones upon death!</div>
+              </div>
+              <div class="legend-row">
+                <span class="legend-icon spitter-icon">◆</span>
+                <div><strong>Spitter (Green):</strong> Tactical sniper. Fires neon plasma bolts directly at you.</div>
+              </div>
+              <div class="legend-row">
+                <span class="legend-icon boss-icon">★</span>
+                <div><strong>Dreadnought (Boss):</strong> Massive capital ship with rotating radial bullet barrages.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btnStartFromManual" class="cyber-button btn-primary">LAUNCH MISSION</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: LEVEL UP UPGRADE MODAL -->
+    <div id="levelUpModal" class="modal-backdrop hidden">
+      <div class="level-up-container">
+        <div class="level-up-header">
+          <div class="level-up-title">SYSTEM UPGRADE READY</div>
+          <div class="level-up-subtitle">CHOOSE YOUR SUBSYSTEM PROTOCOL</div>
+        </div>
+
+        <div id="upgradeCardsContainer" class="upgrade-cards-grid">
+          <!-- 3 Upgrade Cards Injected via upgrades.js -->
+        </div>
+
+        <div class="level-up-footer">
+          <span>Click an upgrade or press key <kbd>1</kbd>, <kbd>2</kbd>, or <kbd>3</kbd></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: PAUSE MODAL -->
+    <div id="pauseModal" class="modal-backdrop hidden">
+      <div class="modal-card cyber-panel pause-card">
+        <div class="modal-header">
+          <h2>TACTICAL PAUSE</h2>
+        </div>
+        <div class="pause-stats">
+          <div>SURVIVAL TIME: <span id="pauseTime">00:00</span></div>
+          <div>CURRENT SCORE: <span id="pauseScore">0</span></div>
+          <div>LEVEL: <span id="pauseLevel">1</span></div>
+        </div>
+        <div class="menu-buttons">
+          <button id="btnResume" class="cyber-button btn-primary">RESUME OPERATION</button>
+          <button id="btnRestartFromPause" class="cyber-button btn-secondary">RESTART MISSION</button>
+          <button id="btnAudioPause" class="cyber-button btn-secondary">
+            <span id="pauseAudioText">SOUND: ON</span>
+          </button>
+          <button id="btnQuitToMenu" class="cyber-button btn-secondary">ABORT TO MAIN MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: GAME OVER MODAL -->
+    <div id="gameOverModal" class="modal-backdrop hidden">
+      <div class="modal-card cyber-panel game-over-card">
+        <div class="go-header">
+          <div class="go-glitch">SIGNAL LOST</div>
+          <div class="go-subtitle">VESSEL HULL CRITICALLY BREACHED</div>
+        </div>
+
+        <div class="stats-summary-grid">
+          <div class="stat-cell">
+            <div class="stat-title">SURVIVAL TIME</div>
+            <div id="goTime" class="stat-num">00:00</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-title">FINAL SCORE</div>
+            <div id="goScore" class="stat-num">000000</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-title">ENEMIES DESTROYED</div>
+            <div id="goKills" class="stat-num">0</div>
+          </div>
+          <div class="stat-cell">
+            <div class="stat-title">SYSTEM LEVEL</div>
+            <div id="goLevel" class="stat-num">1</div>
+          </div>
+        </div>
+
+        <div id="newHighScoreBanner" class="high-score-banner hidden">
+          🏆 NEW HIGH SCORE ACHIEVED! 🏆
+        </div>
+
+        <div class="high-score-recap">
+          RECORD SCORE: <span id="goHighScore">000000</span>
+        </div>
+
+        <div class="menu-buttons go-buttons">
+          <button id="btnPlayAgain" class="cyber-button btn-primary">
+            <span class="btn-text">RE-ENGAGE (PLAY AGAIN)</span>
+          </button>
+          <button id="btnMenuFromGo" class="cyber-button btn-secondary">
+            <span class="btn-text">MAIN MENU</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Engine Modules (ordered for zero-bundle browser compatibility) -->
+  <script src="js/audio.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/particle.js"></script>
+  <script src="js/projectile.js"></script>
+  <script src="js/upgrades.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
